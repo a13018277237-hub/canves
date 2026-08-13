@@ -1,0 +1,49 @@
+// 生图 / 改图：两者接口不同，用 images 是否为空来区分。
+// 可用：prompt、images(dataURL[])、params{size,quality,count}、model、baseUrl、apiKey
+
+if (images.length === 0) {
+  // 文生图：/images/generations（JSON）
+  const data = await request({
+    method: "post",
+    url: `${baseUrl}/v1/images/generations`,
+    headers: { 
+      "Content-Type": "application/json", 
+      Authorization: `Bearer ${apiKey}` 
+    },
+    data: { 
+      model, 
+      prompt, 
+      n: params.count, 
+      size: params.size 
+      // GPT-image-2 默认返回 b64_json，无需传入 response_format
+    },
+  });
+  return (data.data || []).map((item) => 
+    item.b64_json ? `data:image/png;base64,${item.b64_json}` : item.url
+  );
+}
+
+// 图生图：/images/edits（multipart/form-data，参考图作为文件上传）
+const form = new FormData();
+form.set("model", model);
+form.set("prompt", prompt);
+form.set("n", String(params.count));
+// GPT-image-2 默认返回 b64_json，无需设置 response_format
+
+for (const dataUrl of images) {
+  form.append("image", await (await fetch(dataUrl)).blob(), "ref.png");
+}
+
+const edited = await request({
+  method: "post",
+  url: `${baseUrl}/v1/images/edits`,
+  headers: { 
+    Authorization: `Bearer ${apiKey}` 
+    // 不要手动设 Content-Type，交给浏览器自动带上 boundary
+  },
+  data: form,
+});
+
+return (edited.data || []).map((item) => 
+  item.b64_json ? `data:image/png;base64,${item.b64_json}` : item.url
+);

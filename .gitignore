@@ -21,9 +21,4 @@ web/node_modules/.cache
 web/infinite-canvas-web
 web/infinite-canvas-web.zip
 web/.electron-cache/
-web/check-icon.ps1
-web/gen-icon.ps1
-web/make-transparent.ps1
 icon2.png
-打包.bat
-脚本.txt
